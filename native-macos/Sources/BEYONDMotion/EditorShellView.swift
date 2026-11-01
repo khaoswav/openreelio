@@ -28,11 +28,9 @@ struct EditorShellView: View {
     var body: some View {
         VStack(spacing: 0) {
             topBar
-
             HStack(spacing: 0) {
                 sidebar
                 Rectangle().fill(BMColor.line).frame(width: 1)
-
                 VStack(spacing: 0) {
                     HStack(spacing: 0) {
                         viewer
@@ -40,10 +38,8 @@ struct EditorShellView: View {
                         inspector
                     }
                     .frame(maxHeight: .infinity)
-
                     Rectangle().fill(BMColor.line).frame(height: 1)
-                    timeline
-                        .frame(height: 238)
+                    timeline.frame(height: 250)
                 }
             }
         }
@@ -53,9 +49,10 @@ struct EditorShellView: View {
             allowedContentTypes: [.movie, .video, .audio],
             allowsMultipleSelection: true
         ) { result in
-            if case let .success(urls) = result {
-                appState.importMedia(urls)
-            }
+            if case let .success(urls) = result { appState.importMedia(urls) }
+        }
+        .task {
+            if appState.tracks.isEmpty { await appState.refreshProject() }
         }
     }
 
@@ -64,84 +61,70 @@ struct EditorShellView: View {
             BrandMark(size: 29)
             VStack(alignment: .leading, spacing: 1) {
                 Text("BEYOND-MOTİON")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .tracking(1)
-                Text(appState.workspaceURL?.lastPathComponent ?? "Workspace")
-                    .font(.system(size: 10))
-                    .foregroundStyle(BMColor.muted)
+                    .font(.system(size: 11, weight: .bold, design: .rounded)).tracking(1)
+                Text(appState.projectName.isEmpty ? "Project" : appState.projectName)
+                    .font(.system(size: 10)).foregroundStyle(BMColor.muted)
             }
-
             Rectangle().fill(BMColor.line).frame(width: 1, height: 26).padding(.horizontal, 5)
-
             HStack(spacing: 5) {
                 Label("Edit", systemImage: "scissors")
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 7)
+                    .foregroundStyle(.white).padding(.horizontal, 11).padding(.vertical, 7)
                     .background(Color.white.opacity(0.08), in: Capsule())
                 Text("Color")
                 Text("Audio")
                 Text("Export")
             }
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(BMColor.muted)
-
+            .font(.system(size: 11, weight: .medium)).foregroundStyle(BMColor.muted)
             Spacer()
-
+            if appState.isBusy { ProgressView().controlSize(.small) }
             Button {
-                appState.isWorkspacePickerPresented = true
+                appState.projectURL = nil
             } label: {
-                Label("Switch Workspace", systemImage: "folder")
+                Label("Projects", systemImage: "square.grid.2x2")
                     .font(.system(size: 11, weight: .medium))
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(BMColor.muted)
-
+            .buttonStyle(.plain).foregroundStyle(BMColor.muted)
             Button {
                 showMediaImporter = true
             } label: {
                 Label("Import", systemImage: "plus")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
+                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
                     .background(BMColor.rose, in: RoundedRectangle(cornerRadius: 9))
             }
             .buttonStyle(.plain)
+            Button {
+                appState.insertSelectedAssetAtEnd()
+            } label: {
+                Label("Add to timeline", systemImage: "arrow.down.to.line")
+                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 13).padding(.vertical, 8)
+                    .background(BMColor.navy, in: RoundedRectangle(cornerRadius: 9))
+            }
+            .buttonStyle(.plain).disabled(appState.selectedAsset == nil || appState.videoTrack == nil)
         }
-        .padding(.horizontal, 18)
-        .frame(height: 58)
+        .padding(.horizontal, 18).frame(height: 58)
         .background(.ultraThinMaterial)
         .overlay(alignment: .bottom) { Rectangle().fill(BMColor.line).frame(height: 1) }
     }
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SectionEyebrow(title: "Library")
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-
+            SectionEyebrow(title: "Library").padding(.horizontal, 12).padding(.top, 8)
             VStack(spacing: 5) {
                 ForEach(EditorPanel.allCases) { panel in
-                    Button {
-                        activePanel = panel
-                    } label: {
+                    Button { activePanel = panel } label: {
                         HStack(spacing: 11) {
-                            Image(systemName: panel.symbol)
-                                .font(.system(size: 14, weight: .medium))
-                                .frame(width: 20)
-                            Text(panel.rawValue)
-                                .font(.system(size: 12, weight: .medium))
+                            Image(systemName: panel.symbol).font(.system(size: 14, weight: .medium)).frame(width: 20)
+                            Text(panel.rawValue).font(.system(size: 12, weight: .medium))
                             Spacer()
                             if panel == .media {
                                 Text("\(appState.mediaAssets.count)")
-                                    .font(.system(size: 10, weight: .semibold).monospacedDigit())
-                                    .foregroundStyle(BMColor.muted)
+                                    .font(.system(size: 10, weight: .semibold).monospacedDigit()).foregroundStyle(BMColor.muted)
                             }
                         }
                         .foregroundStyle(activePanel == panel ? .white : BMColor.muted)
-                        .padding(.horizontal, 12)
-                        .frame(height: 39)
+                        .padding(.horizontal, 12).frame(height: 39)
                         .background {
                             if activePanel == panel {
                                 RoundedRectangle(cornerRadius: 10).fill(BMColor.rose.opacity(0.16))
@@ -150,99 +133,68 @@ struct EditorShellView: View {
                                     }
                             }
                         }
-                    }
-                    .buttonStyle(.plain)
+                    }.buttonStyle(.plain)
                 }
             }
-
             Rectangle().fill(BMColor.line).frame(height: 1)
-
             HStack {
                 SectionEyebrow(title: activePanel == .media ? "Project media" : activePanel.rawValue)
                 Spacer()
                 if activePanel == .media {
                     Button { showMediaImporter = true } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(BMColor.blue)
-                    }
-                    .buttonStyle(.plain)
+                        Image(systemName: "plus").font(.system(size: 11, weight: .bold)).foregroundStyle(BMColor.blue)
+                    }.buttonStyle(.plain)
                 }
-            }
-            .padding(.horizontal, 12)
+            }.padding(.horizontal, 12)
 
             if activePanel == .media {
                 if appState.mediaAssets.isEmpty {
                     VStack(spacing: 9) {
-                        Image(systemName: "film.stack")
-                            .font(.system(size: 23, weight: .light))
-                            .foregroundStyle(BMColor.muted)
-                        Text("No media yet")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(BMColor.muted)
+                        Image(systemName: "film.stack").font(.system(size: 23, weight: .light)).foregroundStyle(BMColor.muted)
+                        Text("No media yet").font(.system(size: 11, weight: .medium)).foregroundStyle(BMColor.muted)
                         Button("Import media") { showMediaImporter = true }
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(BMColor.blue)
-                            .buttonStyle(.plain)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 28)
+                            .font(.system(size: 10, weight: .semibold)).foregroundStyle(BMColor.blue).buttonStyle(.plain)
+                    }.frame(maxWidth: .infinity).padding(.top, 28)
                 } else {
                     ScrollView {
                         VStack(spacing: 5) {
                             ForEach(appState.mediaAssets) { asset in
-                                Button {
-                                    appState.selectAsset(asset)
-                                } label: {
+                                Button { appState.selectAsset(asset) } label: {
                                     HStack(spacing: 9) {
-                                        Image(systemName: asset.fileType == "MP3" || asset.fileType == "WAV" ? "waveform" : "film")
-                                            .font(.system(size: 13))
-                                            .foregroundStyle(BMColor.blue)
-                                            .frame(width: 30, height: 30)
-                                            .background(BMColor.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                                        Image(systemName: asset.kind.localizedCaseInsensitiveContains("audio") ? "waveform" : "film")
+                                            .font(.system(size: 13)).foregroundStyle(BMColor.blue)
+                                            .frame(width: 30, height: 30).background(BMColor.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                                         VStack(alignment: .leading, spacing: 3) {
-                                            Text(asset.name)
-                                                .font(.system(size: 10, weight: .medium))
-                                                .foregroundStyle(.white)
-                                                .lineLimit(1)
-                                            Text(asset.fileType.isEmpty ? "MEDIA" : asset.fileType)
-                                                .font(.system(size: 8, weight: .bold))
-                                                .tracking(0.8)
-                                                .foregroundStyle(BMColor.muted)
+                                            Text(asset.name).font(.system(size: 10, weight: .medium)).foregroundStyle(.white).lineLimit(1)
+                                            Text(asset.fileType.isEmpty ? asset.kind.uppercased() : asset.fileType)
+                                                .font(.system(size: 8, weight: .bold)).tracking(0.8).foregroundStyle(BMColor.muted)
                                         }
                                         Spacer(minLength: 0)
+                                        if let duration = asset.duration {
+                                            Text(String(format: "%.1fs", duration))
+                                                .font(.system(size: 8, design: .monospaced)).foregroundStyle(BMColor.muted)
+                                        }
                                     }
                                     .padding(7)
                                     .background(appState.selectedAssetID == asset.id ? Color.white.opacity(0.07) : .clear,
                                                 in: RoundedRectangle(cornerRadius: 9))
-                                }
-                                .buttonStyle(.plain)
+                                }.buttonStyle(.plain)
                             }
                         }
                     }
                 }
             } else {
-                Text("This native panel is being built in stages.")
-                    .font(.system(size: 10))
-                    .foregroundStyle(BMColor.muted)
-                    .lineSpacing(3)
-                    .padding(.horizontal, 12)
+                Text("Native \(activePanel.rawValue.lowercased()) tools are being connected to the Rust engine.")
+                    .font(.system(size: 10)).foregroundStyle(BMColor.muted).lineSpacing(3).padding(.horizontal, 12)
             }
 
             Spacer(minLength: 0)
             HStack(spacing: 7) {
                 Circle().fill(Color.green).frame(width: 6, height: 6)
-                Text("LOCAL PROJECT")
-                    .font(.system(size: 8, weight: .bold))
-                    .tracking(1)
-                    .foregroundStyle(BMColor.muted)
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 8)
+                Text("RUST CORE CONNECTED").font(.system(size: 8, weight: .bold)).tracking(1).foregroundStyle(BMColor.muted)
+            }.padding(.horizontal, 12).padding(.bottom, 8)
         }
-        .padding(12)
-        .frame(width: 224)
-        .background(BMColor.panel.opacity(0.72))
+        .padding(12).frame(width: 224).background(BMColor.panel.opacity(0.72))
     }
 
     private var viewer: some View {
@@ -251,118 +203,67 @@ struct EditorShellView: View {
                 SectionEyebrow(title: "Viewer")
                 Spacer()
                 Text(appState.selectedAsset?.name ?? "Preview")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(BMColor.muted)
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 13)
-
+                    .font(.system(size: 10, weight: .medium)).foregroundStyle(BMColor.muted).lineLimit(1)
+            }.padding(.horizontal, 18).padding(.vertical, 13)
             ZStack {
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.black.opacity(0.62))
+                RoundedRectangle(cornerRadius: 14).fill(Color.black.opacity(0.62))
                 if let player = appState.player, appState.selectedAsset != nil {
-                    VideoPlayer(player: player)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .padding(8)
+                    VideoPlayer(player: player).clipShape(RoundedRectangle(cornerRadius: 12)).padding(8)
                 } else {
                     VStack(spacing: 13) {
                         ZStack {
                             Circle().fill(BMColor.navy.opacity(0.32)).frame(width: 82, height: 82)
-                            Image(systemName: "play.rectangle")
-                                .font(.system(size: 30, weight: .light))
-                                .foregroundStyle(BMColor.blue)
+                            Image(systemName: "play.rectangle").font(.system(size: 30, weight: .light)).foregroundStyle(BMColor.blue)
                         }
-                        Text("Your canvas starts here")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.85))
-                        Text("Import a video or audio file to preview it.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(BMColor.muted)
+                        Text("Your canvas starts here").font(.system(size: 15, weight: .semibold)).foregroundStyle(.white.opacity(0.85))
+                        Text("Import media, select it, then add it to your timeline.")
+                            .font(.system(size: 11)).foregroundStyle(BMColor.muted)
                         Button { showMediaImporter = true } label: {
-                            Label("Import media", systemImage: "plus")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 9)
+                            Label("Import media", systemImage: "plus").font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.white).padding(.horizontal, 14).padding(.vertical, 9)
                                 .background(BMColor.rose, in: Capsule())
-                        }
-                        .buttonStyle(.plain)
+                        }.buttonStyle(.plain)
                     }
                 }
             }
-            .aspectRatio(16 / 9, contentMode: .fit)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 20)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(BMColor.canvas)
+            .aspectRatio(16 / 9, contentMode: .fit).frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 24).padding(.bottom, 20)
+        }.frame(maxWidth: .infinity, maxHeight: .infinity).background(BMColor.canvas)
     }
 
     private var inspector: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SectionEyebrow(title: "Inspector")
-                .padding(.top, 8)
-
+            SectionEyebrow(title: "Inspector").padding(.top, 8)
             if let asset = appState.selectedAsset {
                 VStack(alignment: .leading, spacing: 8) {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(LinearGradient(colors: [BMColor.navy.opacity(0.65), BMColor.blue.opacity(0.18)],
                                              startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(height: 104)
-                        .overlay {
-                            Image(systemName: "film")
-                                .font(.system(size: 26, weight: .light))
-                                .foregroundStyle(.white.opacity(0.8))
-                        }
-                    Text(asset.name)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                    Text(asset.fileType.isEmpty ? "MEDIA FILE" : asset.fileType)
-                        .font(.system(size: 9, weight: .bold))
-                        .tracking(1)
-                        .foregroundStyle(BMColor.blue)
+                        .overlay { Image(systemName: "film").font(.system(size: 26, weight: .light)).foregroundStyle(.white.opacity(0.8)) }
+                    Text(asset.name).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white).lineLimit(2)
+                    Text(asset.kind.uppercased()).font(.system(size: 9, weight: .bold)).tracking(1).foregroundStyle(BMColor.blue)
                     Rectangle().fill(BMColor.line).frame(height: 1)
-                    inspectorRow("Location", value: asset.url.deletingLastPathComponent().lastPathComponent)
                     inspectorRow("Format", value: asset.fileType.isEmpty ? "Unknown" : asset.fileType)
+                    inspectorRow("Duration", value: asset.duration.map { String(format: "%.2f sec", $0) } ?? "Not measured")
+                    inspectorRow("Location", value: asset.url.deletingLastPathComponent().lastPathComponent)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 8) {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 23, weight: .light))
-                        .foregroundStyle(BMColor.muted)
-                    Text("Nothing selected")
-                        .font(.system(size: 12, weight: .semibold))
-                    Text("Select media to see its details.")
-                        .font(.system(size: 10))
-                        .foregroundStyle(BMColor.muted)
-                }
-                .padding(.top, 20)
+                    Image(systemName: "slider.horizontal.3").font(.system(size: 23, weight: .light)).foregroundStyle(BMColor.muted)
+                    Text("Nothing selected").font(.system(size: 12, weight: .semibold))
+                    Text("Select media to inspect its details.").font(.system(size: 10)).foregroundStyle(BMColor.muted)
+                }.padding(.top, 20)
             }
-
             Spacer()
-            Text("NATIVE INSPECTOR")
-                .font(.system(size: 8, weight: .bold))
-                .tracking(1.2)
-                .foregroundStyle(BMColor.muted.opacity(0.65))
-        }
-        .padding(16)
-        .frame(width: 246)
-        .background(BMColor.panel.opacity(0.58))
+            Text("NATIVE INSPECTOR").font(.system(size: 8, weight: .bold)).tracking(1.2).foregroundStyle(BMColor.muted.opacity(0.65))
+        }.padding(16).frame(width: 246).background(BMColor.panel.opacity(0.58))
     }
 
     private func inspectorRow(_ title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title.uppercased())
-                .font(.system(size: 8, weight: .bold))
-                .tracking(1)
-                .foregroundStyle(BMColor.muted)
-            Text(value)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.white.opacity(0.85))
-                .lineLimit(1)
+            Text(title.uppercased()).font(.system(size: 8, weight: .bold)).tracking(1).foregroundStyle(BMColor.muted)
+            Text(value).font(.system(size: 10, weight: .medium)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
         }
     }
 
@@ -370,102 +271,76 @@ struct EditorShellView: View {
         VStack(spacing: 0) {
             HStack {
                 SectionEyebrow(title: "Timeline")
-                Text("Sequence 01")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(BMColor.muted)
+                Text("Sequence").font(.system(size: 10, weight: .medium)).foregroundStyle(BMColor.muted)
                 Spacer()
-                Text("00:00:00:00")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(BMColor.blue)
-                Button { showMediaImporter = true } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 25, height: 25)
+                Text("\(appState.clips.count) clips")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced)).foregroundStyle(BMColor.blue)
+                Button { Task { await appState.refreshProject() } } label: {
+                    Image(systemName: "arrow.clockwise").font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white).frame(width: 25, height: 25)
                         .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 17)
-            .frame(height: 43)
-
+                }.buttonStyle(.plain)
+            }.padding(.horizontal, 17).frame(height: 43)
             Rectangle().fill(BMColor.line).frame(height: 1)
 
-            HStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(["VIDEO 01", "VIDEO 02", "AUDIO 01"], id: \.self) { name in
-                        HStack(spacing: 8) {
-                            Image(systemName: name.contains("AUDIO") ? "waveform" : "film")
-                                .font(.system(size: 10))
-                                .foregroundStyle(name.contains("AUDIO") ? BMColor.blue : BMColor.rose)
-                            Text(name)
-                                .font(.system(size: 8, weight: .bold))
-                                .tracking(0.7)
-                                .foregroundStyle(BMColor.muted)
-                            Spacer()
+            if appState.tracks.isEmpty {
+                VStack(spacing: 7) {
+                    Image(systemName: "rectangle.split.3x1").font(.system(size: 19)).foregroundStyle(BMColor.muted)
+                    Text("No timeline tracks").font(.system(size: 10, weight: .medium)).foregroundStyle(BMColor.muted)
+                    Text("Import media and create a sequence track in the next editing pass.")
+                        .font(.system(size: 9)).foregroundStyle(BMColor.muted.opacity(0.75))
+                }.frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                HStack(spacing: 0) {
+                    VStack(spacing: 0) {
+                        Text("TRACKS").font(.system(size: 8, weight: .bold)).tracking(1).foregroundStyle(BMColor.muted)
+                            .frame(height: 28)
+                        ForEach(appState.tracks) { track in
+                            HStack(spacing: 7) {
+                                Image(systemName: track.kind.localizedCaseInsensitiveContains("audio") ? "waveform" : "film")
+                                    .font(.system(size: 10)).foregroundStyle(track.kind.localizedCaseInsensitiveContains("audio") ? BMColor.blue : BMColor.rose)
+                                Text(track.name).font(.system(size: 9, weight: .semibold)).foregroundStyle(BMColor.muted).lineLimit(1)
+                                Spacer(minLength: 0)
+                                Text("\(track.clipCount)").font(.system(size: 8, design: .monospaced)).foregroundStyle(BMColor.muted.opacity(0.7))
+                            }
+                            .padding(.horizontal, 10).frame(height: 48)
+                            .overlay(alignment: .bottom) { Rectangle().fill(BMColor.line).frame(height: 1) }
                         }
-                        .padding(.horizontal, 12)
-                        .frame(height: 48)
-                        Rectangle().fill(BMColor.line).frame(height: 1)
-                    }
-                }
-                .frame(width: 118)
+                    }.frame(width: 118)
 
-                VStack(spacing: 0) {
-                    HStack {
-                        ForEach(["00:00", "00:10", "00:20", "00:30", "00:40", "00:50"], id: \.self) { tick in
-                            Text(tick)
-                                .font(.system(size: 8, design: .monospaced))
-                                .foregroundStyle(BMColor.muted)
-                            Spacer(minLength: 8)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .frame(height: 25)
-
-                    ForEach(0..<3, id: \.self) { row in
-                        ZStack(alignment: .leading) {
-                            Rectangle().fill(Color.white.opacity(0.018))
-                            if row == 0, !appState.mediaAssets.isEmpty {
-                                HStack(spacing: 4) {
-                                    ForEach(appState.mediaAssets.prefix(3)) { asset in
-                                        Text(asset.name)
-                                            .font(.system(size: 9, weight: .medium))
-                                            .foregroundStyle(.white)
-                                            .lineLimit(1)
-                                            .padding(.horizontal, 10)
-                                            .frame(width: 150, height: 34, alignment: .leading)
-                                            .background(BMColor.rose.opacity(0.42), in: RoundedRectangle(cornerRadius: 6))
-                                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(BMColor.rose.opacity(0.65), lineWidth: 1))
+                    ScrollView(.horizontal) {
+                        VStack(spacing: 0) {
+                            HStack(spacing: 0) {
+                                ForEach(0..<12, id: \.self) { tick in
+                                    Text(String(format: "%02d:%02d", tick / 6, (tick % 6) * 10))
+                                        .font(.system(size: 8, design: .monospaced)).foregroundStyle(BMColor.muted)
+                                        .frame(width: 90, alignment: .leading)
+                                }
+                            }.padding(.leading, 12).frame(height: 28)
+                            ForEach(appState.tracks) { track in
+                                ZStack(alignment: .leading) {
+                                    Rectangle().fill(Color.white.opacity(0.018))
+                                    ForEach(appState.clips.filter { $0.trackId == track.id }) { clip in
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(track.kind.localizedCaseInsensitiveContains("audio") ? BMColor.navy.opacity(0.78) : BMColor.rose.opacity(0.48))
+                                            .frame(width: max(CGFloat(clip.durationSec * 45), 24), height: 32)
+                                            .overlay(alignment: .leading) {
+                                                Text(appState.mediaAssets.first(where: { $0.id == clip.assetId })?.name ?? "Clip")
+                                                    .font(.system(size: 8, weight: .medium)).foregroundStyle(.white)
+                                                    .lineLimit(1).padding(.horizontal, 7)
+                                            }
+                                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.16), lineWidth: 1))
+                                            .padding(.leading, CGFloat(max(clip.timelineInSec, 0) * 45) + 12)
                                     }
                                 }
-                                .padding(.leading, 12)
-                            } else if row == 2 && !appState.mediaAssets.isEmpty {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(BMColor.navy.opacity(0.65))
-                                    .frame(width: 205, height: 30)
-                                    .overlay(alignment: .leading) {
-                                        HStack(spacing: 2) {
-                                            ForEach(0..<22, id: \.self) { index in
-                                                Capsule().fill(BMColor.blue.opacity(0.65)).frame(width: 2, height: CGFloat((index * 7) % 13 + 5))
-                                            }
-                                        }
-                                        .padding(.horizontal, 8)
-                                    }
-                                    .padding(.leading, 12)
+                                .frame(height: 48)
+                                .overlay(alignment: .bottom) { Rectangle().fill(BMColor.line).frame(height: 1) }
                             }
-                            Rectangle().fill(BMColor.line).frame(height: 1).offset(y: 23.5)
                         }
-                        .frame(height: 48)
+                        .frame(minWidth: 1080, alignment: .leading)
                     }
                 }
-                .overlay(alignment: .leading) {
-                    Rectangle().fill(BMColor.rose).frame(width: 1.5).padding(.top, 25)
-                        .shadow(color: BMColor.rose.opacity(0.8), radius: 5)
-                        .padding(.leading, 84)
-                }
             }
-        }
-        .background(BMColor.panel.opacity(0.72))
+        }.background(BMColor.panel.opacity(0.72))
     }
 }

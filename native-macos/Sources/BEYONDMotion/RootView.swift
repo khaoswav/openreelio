@@ -6,12 +6,9 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if appState.projectURL != nil {
+            if appState.workspaceURL != nil {
                 EditorShellView()
                     .transition(.opacity.combined(with: .scale(scale: 0.985)))
-            } else if appState.workspaceURL != nil {
-                WorkspaceDashboardView()
-                    .transition(.opacity)
             } else {
                 WorkspaceWelcomeView()
                     .transition(.opacity)
@@ -19,7 +16,6 @@ struct RootView: View {
         }
         .background(BMColor.canvas)
         .animation(.smooth(duration: 0.28), value: appState.workspaceURL)
-        .animation(.smooth(duration: 0.28), value: appState.projectURL)
         .fileImporter(
             isPresented: $appState.isWorkspacePickerPresented,
             allowedContentTypes: [.folder],
@@ -28,14 +24,6 @@ struct RootView: View {
             if case let .success(urls) = result, let url = urls.first {
                 appState.openWorkspace(url)
             }
-        }
-        .alert("BEYOND-MOTİON", isPresented: Binding(
-            get: { appState.errorMessage != nil },
-            set: { if !$0 { appState.errorMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) { appState.errorMessage = nil }
-        } message: {
-            Text(appState.errorMessage ?? "")
         }
     }
 }

@@ -16,8 +16,9 @@ jobs:
   swift-build:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Build Rust CLI bridge
-        run: cargo build --release --manifest-path crates/openreelio-cli/Cargo.toml --bin openreelio-cli
-      - name: Build SwiftUI app
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Show Swift version
+        run: swift --version
+      - name: Build native macOS package
         run: swift build --package-path native-macos

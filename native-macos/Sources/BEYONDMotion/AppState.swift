@@ -33,29 +33,23 @@ final class AppState: ObservableObject {
     private var activeWorkspaceURL: URL?
     private var scopedMediaURLs: Set<URL> = []
 
-    var selectedAsset: MediaAsset? {
-        mediaAssets.first { $0.id == selectedAssetID }
-    }
+    var selectedAsset: MediaAsset? { mediaAssets.first { $0.id == selectedAssetID } }
+    var videoTrack: CLITrack? { tracks.first { $0.kind.localizedCaseInsensitiveContains("video") } }
 
-    var videoTrack: CLITrack? {
-        tracks.first { $0.kind.localizedCaseInsensitiveContains("video") }
-    }
-
-    init() {
-        restoreRecentWorkspaces()
-    }
+    init() { restoreRecentWorkspaces() }
 
     func openWorkspace(_ url: URL) {
-        if let activeWorkspaceURL {
-            activeWorkspaceURL.stopAccessingSecurityScopedResource()
-        }
+        if let activeWorkspaceURL { activeWorkspaceURL.stopAccessingSecurityScopedResource() }
         _ = url.startAccessingSecurityScopedResource()
         activeWorkspaceURL = url
         workspaceURL = url
         projectURL = nil
+        projectName = ""
         mediaAssets = []
         tracks = []
         clips = []
+        player?.pause()
+        player = nil
 
         var recent = recentWorkspaces.filter { $0.standardizedFileURL != url.standardizedFileURL }
         recent.insert(url, at: 0)
@@ -76,7 +70,6 @@ final class AppState: ObservableObject {
         guard let workspaceURL else { return }
         let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { errorMessage = "Enter a project name."; return }
-
         isBusy = true
         defer { isBusy = false }
         do {
@@ -85,10 +78,9 @@ final class AppState: ObservableObject {
             let created: CLIProjectCreated = try await cli.runJSON([
                 "project", "create", "--name", name, "--path", folder.path
             ])
-            openProject(URL(fileURLWithPath: created.path))
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+            projectURL = URL(fileURLWithPath: created.path)
+            await refreshProject()
+        } catch { errorMessage = error.localizedDescription }
     }
 
     func openProject(_ url: URL) {
@@ -118,16 +110,11 @@ final class AppState: ObservableObject {
                 player?.pause()
                 player = nil
             }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        } catch { errorMessage = error.localizedDescription }
     }
 
     func importMedia(_ urls: [URL]) {
-        guard let projectURL else {
-            errorMessage = "Create or open a project before importing media."
-            return
-        }
+        guard let projectURL else { errorMessage = "Create or open a project before importing media."; return }
         Task {
             isBusy = true
             defer { isBusy = false }
@@ -135,15 +122,12 @@ final class AppState: ObservableObject {
                 for url in urls {
                     let access = url.startAccessingSecurityScopedResource()
                     if access { scopedMediaURLs.insert(url) }
-                    _ = try await cli.runJSON(
-                        ["asset", "import", "--path", projectURL.path, "--file", url.path],
-                        as: CLIProjectCreated.self
+                    let _: CLIStatusResponse = try await cli.runJSON(
+                        ["asset", "import", "--path", projectURL.path, "--file", url.path]
                     )
                 }
                 await refreshProject()
-            } catch {
-                errorMessage = error.localizedDescription
-            }
+            } catch { errorMessage = error.localizedDescription }
         }
     }
 
@@ -160,20 +144,16 @@ final class AppState: ObservableObject {
         }
         let position = clips.filter { $0.trackId == track.id }
             .map { $0.timelineInSec + $0.durationSec }.max() ?? 0
-
         Task {
             isBusy = true
             defer { isBusy = false }
             do {
-                _ = try await cli.runJSON(
-                    ["timeline", "insert", "--path", projectURL.path, "--asset", asset.id,
-                     "--track", track.id, "--at", String(position)],
-                    as: CLIProjectCreated.self
-                )
+                let _: CLIStatusResponse = try await cli.runJSON([
+                    "timeline", "insert", "--path", projectURL.path, "--asset", asset.id,
+                    "--track", track.id, "--at", String(position)
+                ])
                 await refreshProject()
-            } catch {
-                errorMessage = error.localizedDescription
-            }
+            } catch { errorMessage = error.localizedDescription }
         }
     }
 
