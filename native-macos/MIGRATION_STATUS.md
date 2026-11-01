@@ -18,12 +18,17 @@ Base: existing BEYOND-MOTİON Tauri + React + Rust application.
 - [x] Split selected clips at the playhead through the Rust timeline command.
 - [x] Remove selected clips through the Rust timeline command.
 - [x] Clip context actions and keyboard shortcuts for split/delete.
+- [x] Restore the SwiftUI-to-Rust CLI process bridge and typed JSON response models.
+- [x] Drag clips horizontally to move them through the Rust timeline command.
+- [x] Trim clip start/end handles through the Rust timeline trim command.
+- [x] Extend the CLI trim command with an undoable timeline-in adjustment for left-edge trims.
+- [x] Snap moved clips to nearby clip boundaries.
 - [x] Native AVKit source preview and editor shell.
 - [x] Build script for the SwiftUI app plus the headless Rust CLI.
 
 ## Remaining migration work
 
-- [ ] Timeline drag-to-move, trim handles, snapping and native track management.
+- [ ] Native track creation/removal, vertical clip movement between tracks and configurable snapping.
 - [ ] Rendered timeline thumbnails and waveform data.
 - [ ] Real timeline playback/composition preview (AVKit currently previews the selected source file).
 - [ ] Effects, titles, audio controls and inspector editing.
