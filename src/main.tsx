@@ -39,7 +39,7 @@ export function RootErrorFallback({ error, resetError }: { error: Error; resetEr
     <div className="flex h-screen items-center justify-center bg-editor-bg px-4 py-6 text-editor-text sm:px-8">
       <div className="w-full max-w-2xl rounded-xl border border-editor-border bg-surface-panel p-6 text-center shadow-2xl">
         <h1 className="mb-3 text-xl font-semibold text-status-error sm:text-2xl">
-          OpenReelio encountered an error
+          BEYOND-MOTİON encountered an error
         </h1>
         <p className="mx-auto mb-6 max-w-xl text-sm text-text-secondary sm:text-base">
           Something went wrong. Your work may have been auto-saved. Please try reloading the

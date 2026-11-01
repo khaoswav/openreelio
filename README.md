@@ -1,4 +1,4 @@
-# OpenReelio
+# BEYOND-MOTİON
 
 <div align="center">
 
@@ -16,7 +16,7 @@
 
 ## Overview
 
-OpenReelio is an AI-powered desktop video editor designed for content creators. Built with a prompt-first approach, it combines the power of modern AI with professional editing capabilities.
+BEYOND-MOTİON is an AI-powered desktop video editor designed for content creators. Built with a prompt-first approach, it combines the power of modern AI with professional editing capabilities.
 
 ### Key Concepts
 

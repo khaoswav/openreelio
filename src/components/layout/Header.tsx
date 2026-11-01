@@ -65,7 +65,7 @@ interface HeaderProps {
 // =============================================================================
 
 export function Header({
-  title = 'OpenReelio',
+  title = 'BEYOND-MOTİON',
   version = '0.1.0',
   showToolbar = true,
   onExport,

@@ -11,6 +11,12 @@
    ============================================================================= */
 
 :root {
+  /* BEYOND-MOTİON brand palette */
+  --brand-rose: #DF3C5F;
+  --brand-navy: #224193;
+  --brand-blue: #6F9BD1;
+  --brand-white: #FFFFFF;
+
   /* Animation durations */
   --duration-instant: 50ms;
   --duration-fast: 100ms;
@@ -54,12 +60,17 @@ body,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #424242;
+  background: var(--brand-navy);
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4f4f4f;
+  background: var(--brand-blue);
+}
+
+::selection {
+  background: rgb(223 60 95 / 28%);
+  color: var(--brand-white);
 }
 
 /* =============================================================================

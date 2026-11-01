@@ -24,19 +24,25 @@ export default {
           950: '#09090b', // True deep black for OLED contrast
         },
 
-        // Brand Identity
+        // BEYOND-MOTİON brand palette
+        brand: {
+          rose: '#DF3C5F',
+          navy: '#224193',
+          blue: '#6F9BD1',
+          white: '#FFFFFF',
+        },
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9', // Sky-500 (Main Brand)
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-          950: '#082f49',
+          50: '#FEF2F4',
+          100: '#FCE5EA',
+          200: '#F8CBD4',
+          300: '#F3A7B5',
+          400: '#EC879B',
+          500: '#E65E7A',
+          600: '#DF3C5F',
+          700: '#C32B4D',
+          800: '#9F213E',
+          900: '#77192F',
+          950: '#4F1020',
         },
 
         // Legacy/editor semantic aliases (used across the UI)
@@ -86,16 +92,16 @@ export default {
           subtle: '#27272a', // Dividers (Zinc-800)
           default: '#3f3f46', // Input borders (Zinc-700)
           strong: '#52525b', // Active borders (Zinc-600)
-          focus: '#0ea5e9', // Focus rings (Primary-500)
+          focus: '#DF3C5F', // BEYOND-MOTİON primary
         },
 
         // Accent aliases (used by UI primitives)
         accent: {
-          primary: '#0ea5e9',
+          primary: '#DF3C5F',
           success: '#22c55e',
           warning: '#f59e0b',
           error: '#ef4444',
-          info: '#3b82f6',
+          info: '#6F9BD1',
         },
 
         // ---------------------------------------------------------------------

@@ -121,7 +121,7 @@ export function WelcomeScreen({
               <Film className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-editor-text">OpenReelio</p>
+              <p className="truncate text-sm font-semibold text-editor-text">BEYOND-MOTİON</p>
               <p className="text-xs text-editor-text-muted">Project Launcher</p>
             </div>
           </div>
@@ -137,7 +137,7 @@ export function WelcomeScreen({
               Select a project folder
             </h1>
             <p className="mt-4 max-w-lg text-sm leading-6 text-editor-text-muted sm:text-base">
-              Open an existing OpenReelio workspace or choose a folder to initialize a new project.
+              Open an existing BEYOND-MOTİON workspace or choose a folder to initialize a new project.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
