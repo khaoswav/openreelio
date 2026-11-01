@@ -278,11 +278,11 @@ struct EditorShellView: View {
                 Button { appState.splitSelectedClip() } label: {
                     Label("Split", systemImage: "scissors").font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(appState.selectedClip == nil ? BMColor.muted : BMColor.blue)
-                }.buttonStyle(.plain).disabled(appState.selectedClip == nil)
+                }.buttonStyle(.plain).disabled(appState.selectedClip == nil).keyboardShortcut("b", modifiers: .command)
                 Button { appState.removeSelectedClip() } label: {
                     Image(systemName: "trash").font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(appState.selectedClip == nil ? BMColor.muted : BMColor.rose)
-                }.buttonStyle(.plain).disabled(appState.selectedClip == nil)
+                }.buttonStyle(.plain).disabled(appState.selectedClip == nil).keyboardShortcut(.delete, modifiers: [])
                 Button { appState.undo() } label: {
                     Image(systemName: "arrow.uturn.backward").font(.system(size: 10, weight: .bold))
                         .foregroundStyle(.white).frame(width: 25, height: 25)
@@ -369,7 +369,7 @@ struct EditorShellView: View {
                                         .buttonStyle(.plain)
                                         .padding(.leading, CGFloat(max(clip.timelineInSec, 0) * 45) + 12)
                                         .contextMenu {
-                                            Button("Split at playhead") { appState.selectClip(clip); appState.splitSelectedClip() }
+                                            Button("Split at clip midpoint") { appState.selectClip(clip); appState.playheadSeconds = clip.timelineInSec + clip.durationSec / 2; appState.splitSelectedClip() }
                                             Button("Remove clip", role: .destructive) { appState.selectClip(clip); appState.removeSelectedClip() }
                                         }
                                     }
