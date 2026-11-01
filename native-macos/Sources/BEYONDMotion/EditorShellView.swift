@@ -275,6 +275,16 @@ struct EditorShellView: View {
                 Spacer()
                 Text("\(appState.clips.count) clips")
                     .font(.system(size: 10, weight: .medium, design: .monospaced)).foregroundStyle(BMColor.blue)
+                Button { appState.undo() } label: {
+                    Image(systemName: "arrow.uturn.backward").font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white).frame(width: 25, height: 25)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
+                }.buttonStyle(.plain).keyboardShortcut("z", modifiers: .command)
+                Button { appState.redo() } label: {
+                    Image(systemName: "arrow.uturn.forward").font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white).frame(width: 25, height: 25)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
+                }.buttonStyle(.plain).keyboardShortcut("z", modifiers: [.command, .shift])
                 Button { Task { await appState.refreshProject() } } label: {
                     Image(systemName: "arrow.clockwise").font(.system(size: 10, weight: .bold))
                         .foregroundStyle(.white).frame(width: 25, height: 25)

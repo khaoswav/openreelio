@@ -8,7 +8,6 @@ struct MediaAsset: Identifiable {
     let url: URL
     let duration: Double?
     let kind: String
-
     var fileType: String { url.pathExtension.uppercased() }
 }
 
@@ -35,6 +34,17 @@ final class AppState: ObservableObject {
 
     var selectedAsset: MediaAsset? { mediaAssets.first { $0.id == selectedAssetID } }
     var videoTrack: CLITrack? { tracks.first { $0.kind.localizedCaseInsensitiveContains("video") } }
+
+    var availableProjects: [URL] {
+        guard let workspaceURL else { return [] }
+        let root = workspaceURL.appendingPathComponent("Projects", isDirectory: true)
+        guard let entries = try? FileManager.default.contentsOfDirectory(
+            at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]
+        ) else { return [] }
+        return entries.filter {
+            FileManager.default.fileExists(atPath: $0.appendingPathComponent(".openreelio/state/project.json").path)
+        }.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
+    }
 
     init() { restoreRecentWorkspaces() }
 
@@ -144,14 +154,26 @@ final class AppState: ObservableObject {
         }
         let position = clips.filter { $0.trackId == track.id }
             .map { $0.timelineInSec + $0.durationSec }.max() ?? 0
+        runProjectCommand(["timeline", "insert", "--path", projectURL.path, "--asset", asset.id,
+                           "--track", track.id, "--at", String(position)])
+    }
+
+    func undo() {
+        guard let projectURL else { return }
+        runProjectCommand(["timeline", "undo", "--path", projectURL.path])
+    }
+
+    func redo() {
+        guard let projectURL else { return }
+        runProjectCommand(["timeline", "redo", "--path", projectURL.path])
+    }
+
+    private func runProjectCommand(_ arguments: [String]) {
         Task {
             isBusy = true
             defer { isBusy = false }
             do {
-                let _: CLIStatusResponse = try await cli.runJSON([
-                    "timeline", "insert", "--path", projectURL.path, "--asset", asset.id,
-                    "--track", track.id, "--at", String(position)
-                ])
+                let _: CLIStatusResponse = try await cli.runJSON(arguments)
                 await refreshProject()
             } catch { errorMessage = error.localizedDescription }
         }
