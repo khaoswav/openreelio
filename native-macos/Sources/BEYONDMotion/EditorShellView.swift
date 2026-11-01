@@ -275,6 +275,14 @@ struct EditorShellView: View {
                 Spacer()
                 Text("\(appState.clips.count) clips")
                     .font(.system(size: 10, weight: .medium, design: .monospaced)).foregroundStyle(BMColor.blue)
+                Button { appState.splitSelectedClip() } label: {
+                    Label("Split", systemImage: "scissors").font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(appState.selectedClip == nil ? BMColor.muted : BMColor.blue)
+                }.buttonStyle(.plain).disabled(appState.selectedClip == nil)
+                Button { appState.removeSelectedClip() } label: {
+                    Image(systemName: "trash").font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(appState.selectedClip == nil ? BMColor.muted : BMColor.rose)
+                }.buttonStyle(.plain).disabled(appState.selectedClip == nil)
                 Button { appState.undo() } label: {
                     Image(systemName: "arrow.uturn.backward").font(.system(size: 10, weight: .bold))
                         .foregroundStyle(.white).frame(width: 25, height: 25)
@@ -291,6 +299,17 @@ struct EditorShellView: View {
                         .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
                 }.buttonStyle(.plain)
             }.padding(.horizontal, 17).frame(height: 43)
+            Rectangle().fill(BMColor.line).frame(height: 1)
+            HStack(spacing: 10) {
+                Image(systemName: "playhead").font(.system(size: 10, weight: .semibold)).foregroundStyle(BMColor.rose)
+                Text("PLAYHEAD").font(.system(size: 8, weight: .bold)).tracking(1).foregroundStyle(BMColor.muted)
+                Slider(value: $appState.playheadSeconds, in: 0...appState.timelineDuration, step: 0.1)
+                    .tint(BMColor.rose)
+                Text(String(format: "%.1fs", appState.playheadSeconds))
+                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.white).frame(width: 48, alignment: .trailing)
+            }
+            .padding(.horizontal, 14).frame(height: 34)
             Rectangle().fill(BMColor.line).frame(height: 1)
 
             if appState.tracks.isEmpty {
@@ -331,16 +350,28 @@ struct EditorShellView: View {
                                 ZStack(alignment: .leading) {
                                     Rectangle().fill(Color.white.opacity(0.018))
                                     ForEach(appState.clips.filter { $0.trackId == track.id }) { clip in
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .fill(track.kind.localizedCaseInsensitiveContains("audio") ? BMColor.navy.opacity(0.78) : BMColor.rose.opacity(0.48))
-                                            .frame(width: max(CGFloat(clip.durationSec * 45), 24), height: 32)
-                                            .overlay(alignment: .leading) {
-                                                Text(appState.mediaAssets.first(where: { $0.id == clip.assetId })?.name ?? "Clip")
-                                                    .font(.system(size: 8, weight: .medium)).foregroundStyle(.white)
-                                                    .lineLimit(1).padding(.horizontal, 7)
-                                            }
-                                            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.16), lineWidth: 1))
-                                            .padding(.leading, CGFloat(max(clip.timelineInSec, 0) * 45) + 12)
+                                        Button {
+                                            appState.selectClip(clip)
+                                        } label: {
+                                            RoundedRectangle(cornerRadius: 6)
+                                                .fill(track.kind.localizedCaseInsensitiveContains("audio") ? BMColor.navy.opacity(0.88) : BMColor.rose.opacity(0.62))
+                                                .frame(width: max(CGFloat(clip.durationSec * 45), 24), height: 32)
+                                                .overlay(alignment: .leading) {
+                                                    Text(appState.mediaAssets.first(where: { $0.id == clip.assetId })?.name ?? "Clip")
+                                                        .font(.system(size: 8, weight: .medium)).foregroundStyle(.white)
+                                                        .lineLimit(1).padding(.horizontal, 7)
+                                                }
+                                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(
+                                                    appState.selectedClipID == clip.id ? BMColor.blue : Color.white.opacity(0.16),
+                                                    lineWidth: appState.selectedClipID == clip.id ? 2 : 1
+                                                ))
+                                        }
+                                        .buttonStyle(.plain)
+                                        .padding(.leading, CGFloat(max(clip.timelineInSec, 0) * 45) + 12)
+                                        .contextMenu {
+                                            Button("Split at playhead") { appState.selectClip(clip); appState.splitSelectedClip() }
+                                            Button("Remove clip", role: .destructive) { appState.selectClip(clip); appState.removeSelectedClip() }
+                                        }
                                     }
                                 }
                                 .frame(height: 48)
