@@ -199,7 +199,8 @@ final class AppState: ObservableObject {
         let snapTargets = clips.filter { $0.id != clip.id }.flatMap {
             [$0.timelineInSec, $0.timelineInSec + $0.durationSec]
         }
-        let snapped = snapTargets.first(where: { abs($0 - proposed) <= 0.14 }) ?? proposed
+        let nearest = snapTargets.min(by: { abs($0 - proposed) < abs($1 - proposed) })
+        let snapped = nearest.flatMap { abs($0 - proposed) <= 0.14 ? $0 : nil } ?? proposed
         runProjectCommand(["timeline", "move", "--path", projectURL.path,
                            "--clip", clip.id, "--track", clip.trackId, "--to", String(snapped)])
     }
