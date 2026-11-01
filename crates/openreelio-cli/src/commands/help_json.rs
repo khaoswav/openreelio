@@ -334,9 +334,10 @@ pub(crate) fn build_schema() -> serde_json::Value {
                     "track": { "type": "string", "required": true, "desc": "Track ID" },
                     "source-in": { "type": "number", "required": false, "desc": "New source in point (seconds)" },
                     "source-out": { "type": "number", "required": false, "desc": "New source out point (seconds). Refused when it is past the end of the asset's media - on every surface that trims, including command execute --type TrimClip and plan execute; the error names the asset's measured length" },
+                    "timeline-in": { "type": "number", "required": false, "desc": "New timeline in point (seconds), used with source-in for a left-edge trim" },
                     "sequence": { "type": "string", "required": false, "desc": "Sequence ID" }
                 },
-                "example": "openreelio-cli timeline trim --path ./project --clip clip_001 --track track_v1 --source-in 2.0 --source-out 8.0"
+                "example": "openreelio-cli timeline trim --path ./project --clip clip_001 --track track_v1 --source-in 2.0 --source-out 8.0 --timeline-in 1.0"
             },
             "timeline.split": {
                 "description": edit_desc("Split a clip at a specific timeline position"),
