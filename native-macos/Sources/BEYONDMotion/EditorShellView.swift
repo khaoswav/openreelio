@@ -350,24 +350,45 @@ struct EditorShellView: View {
                                 ZStack(alignment: .leading) {
                                     Rectangle().fill(Color.white.opacity(0.018))
                                     ForEach(appState.clips.filter { $0.trackId == track.id }) { clip in
-                                        Button {
-                                            appState.selectClip(clip)
-                                        } label: {
+                                        ZStack {
                                             RoundedRectangle(cornerRadius: 6)
                                                 .fill(track.kind.localizedCaseInsensitiveContains("audio") ? BMColor.navy.opacity(0.88) : BMColor.rose.opacity(0.62))
-                                                .frame(width: max(CGFloat(clip.durationSec * 45), 24), height: 32)
-                                                .overlay(alignment: .leading) {
-                                                    Text(appState.mediaAssets.first(where: { $0.id == clip.assetId })?.name ?? "Clip")
-                                                        .font(.system(size: 8, weight: .medium)).foregroundStyle(.white)
-                                                        .lineLimit(1).padding(.horizontal, 7)
-                                                }
-                                                .overlay(RoundedRectangle(cornerRadius: 6).stroke(
-                                                    appState.selectedClipID == clip.id ? BMColor.blue : Color.white.opacity(0.16),
-                                                    lineWidth: appState.selectedClipID == clip.id ? 2 : 1
-                                                ))
+                                            Text(appState.mediaAssets.first(where: { $0.id == clip.assetId })?.name ?? "Clip")
+                                                .font(.system(size: 8, weight: .medium)).foregroundStyle(.white)
+                                                .lineLimit(1).padding(.horizontal, 8)
+                                            RoundedRectangle(cornerRadius: 6).stroke(
+                                                appState.selectedClipID == clip.id ? BMColor.blue : Color.white.opacity(0.16),
+                                                lineWidth: appState.selectedClipID == clip.id ? 2 : 1
+                                            )
+                                            HStack(spacing: 0) {
+                                                Capsule().fill(.white.opacity(0.9)).frame(width: 4, height: 19)
+                                                    .frame(width: 9, height: 32).contentShape(Rectangle())
+                                                    .gesture(DragGesture(minimumDistance: 3).onEnded { value in
+                                                        let delta = Double(value.translation.width) / 45
+                                                        let lowerBound = -min(clip.timelineInSec, clip.sourceInSec / max(clip.speed, 0.001))
+                                                        let applied = max(delta, lowerBound)
+                                                        let nextIn = max(0, clip.sourceInSec + applied * clip.speed)
+                                                        let nextTimeline = max(0, clip.timelineInSec + applied)
+                                                        appState.trimClip(clip, sourceIn: nextIn, timelineIn: nextTimeline)
+                                                    })
+                                                Spacer(minLength: 0)
+                                                Capsule().fill(.white.opacity(0.9)).frame(width: 4, height: 19)
+                                                    .frame(width: 9, height: 32).contentShape(Rectangle())
+                                                    .gesture(DragGesture(minimumDistance: 3).onEnded { value in
+                                                        let delta = Double(value.translation.width) / 45 * clip.speed
+                                                        let nextOut = max(clip.sourceInSec + 0.05, clip.sourceOutSec + delta)
+                                                        appState.trimClip(clip, sourceOut: nextOut)
+                                                    })
+                                            }
                                         }
-                                        .buttonStyle(.plain)
+                                        .frame(width: max(CGFloat(clip.durationSec * 45), 30), height: 32)
+                                        .contentShape(RoundedRectangle(cornerRadius: 6))
+                                        .onTapGesture { appState.selectClip(clip) }
+                                        .simultaneousGesture(DragGesture(minimumDistance: 8).onEnded { value in
+                                            appState.moveClip(clip, to: clip.timelineInSec + Double(value.translation.width) / 45)
+                                        })
                                         .padding(.leading, CGFloat(max(clip.timelineInSec, 0) * 45) + 12)
+                                        .help("Drag to move. Drag either edge to trim.")
                                         .contextMenu {
                                             Button("Split at clip midpoint") { appState.selectClip(clip); appState.playheadSeconds = clip.timelineInSec + clip.durationSec / 2; appState.splitSelectedClip() }
                                             Button("Remove clip", role: .destructive) { appState.selectClip(clip); appState.removeSelectedClip() }
