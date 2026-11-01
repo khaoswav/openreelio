@@ -1624,6 +1624,38 @@ fn test_timeline_trim_refuses_a_source_out_past_the_media() {
     );
 }
 
+/// Feature: the CLI trim command can reposition the retained left edge.
+/// Scenario: trimming source in and timeline in together
+///   Given a probed four-second asset placed at timeline zero
+///   When the source in point and timeline in point are both moved forward
+///   Then the clip retains the requested timeline position and source range
+#[test]
+fn test_timeline_trim_updates_timeline_in_for_left_edge_trim() {
+    let dir = create_temp_project("timeline_trim_timeline_in");
+    let Some(fixture) = import_fixture_asset(&dir, "timeline_trim_timeline_in", &[]) else {
+        return;
+    };
+    let (path, asset_id) = (fixture.path, fixture.asset_id);
+    let track_id = first_video_track_id(&path);
+    let inserted = run_cli_ok(&[
+        "timeline", "insert", "--path", &path, "--asset", &asset_id, "--track", &track_id, "--at",
+        "0.0",
+    ]);
+    let clip_id = inserted["createdIds"][0].as_str().expect("clip id");
+
+    run_cli_ok(&[
+        "timeline", "trim", "--path", &path, "--clip", clip_id, "--track", &track_id,
+        "--source-in", "1.0", "--source-out", "4.0", "--timeline-in", "2.0",
+    ]);
+
+    let clips = run_cli_ok(&["timeline", "clips", "--path", &path]);
+    let clip = &clips["clips"][0];
+    assert_eq!(clip["timelineInSec"].as_f64(), Some(2.0), "{clip}");
+    assert_eq!(clip["sourceInSec"].as_f64(), Some(1.0), "{clip}");
+    assert_eq!(clip["sourceOutSec"].as_f64(), Some(4.0), "{clip}");
+    assert_eq!(clip["durationSec"].as_f64(), Some(3.0), "{clip}");
+}
+
 /// The active sequence's id.
 fn active_sequence_id(path: &str) -> String {
     run_cli_ok(&["timeline", "clips", "--path", path])["sequenceId"]
