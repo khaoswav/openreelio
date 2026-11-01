@@ -371,7 +371,10 @@ struct EditorShellView: View {
                                                         let nextTimeline = max(0, clip.timelineInSec + applied)
                                                         appState.trimClip(clip, sourceIn: nextIn, timelineIn: nextTimeline)
                                                     })
-                                                Spacer(minLength: 0)
+                                                Rectangle().fill(.clear).contentShape(Rectangle())
+                                                    .gesture(DragGesture(minimumDistance: 8).onEnded { value in
+                                                        appState.moveClip(clip, to: clip.timelineInSec + Double(value.translation.width) / 45)
+                                                    })
                                                 Capsule().fill(.white.opacity(0.9)).frame(width: 4, height: 19)
                                                     .frame(width: 9, height: 32).contentShape(Rectangle())
                                                     .gesture(DragGesture(minimumDistance: 3).onEnded { value in
@@ -384,9 +387,6 @@ struct EditorShellView: View {
                                         .frame(width: max(CGFloat(clip.durationSec * 45), 30), height: 32)
                                         .contentShape(RoundedRectangle(cornerRadius: 6))
                                         .onTapGesture { appState.selectClip(clip) }
-                                        .simultaneousGesture(DragGesture(minimumDistance: 8).onEnded { value in
-                                            appState.moveClip(clip, to: clip.timelineInSec + Double(value.translation.width) / 45)
-                                        })
                                         .padding(.leading, CGFloat(max(clip.timelineInSec, 0) * 45) + 12)
                                         .help("Drag to move. Drag either edge to trim.")
                                         .contextMenu {
