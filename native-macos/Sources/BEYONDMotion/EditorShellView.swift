@@ -446,8 +446,8 @@ struct EditorShellView: View {
                                     .frame(width: 205, height: 30)
                                     .overlay(alignment: .leading) {
                                         HStack(spacing: 2) {
-                                            ForEach(0..<22, id: \.self) { _ in
-                                                Capsule().fill(BMColor.blue.opacity(0.65)).frame(width: 2, height: CGFloat.random(in: 5...17))
+                                            ForEach(0..<22, id: \.self) { index in
+                                                Capsule().fill(BMColor.blue.opacity(0.65)).frame(width: 2, height: CGFloat((index * 7) % 13 + 5))
                                             }
                                         }
                                         .padding(.horizontal, 8)
