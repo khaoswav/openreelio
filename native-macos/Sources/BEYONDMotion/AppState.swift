@@ -195,8 +195,24 @@ final class AppState: ObservableObject {
 
     func moveClip(_ clip: CLIClip, to seconds: Double) {
         guard let projectURL else { return }
+        let proposed = max(0, seconds)
+        let snapTargets = clips.filter { $0.id != clip.id }.flatMap {
+            [$0.timelineInSec, $0.timelineInSec + $0.durationSec]
+        }
+        let snapped = snapTargets.first(where: { abs($0 - proposed) <= 0.14 }) ?? proposed
         runProjectCommand(["timeline", "move", "--path", projectURL.path,
-                           "--clip", clip.id, "--track", clip.trackId, "--to", String(max(0, seconds))])
+                           "--clip", clip.id, "--track", clip.trackId, "--to", String(snapped)])
+    }
+
+    func trimClip(_ clip: CLIClip, sourceIn: Double? = nil,
+                  sourceOut: Double? = nil, timelineIn: Double? = nil) {
+        guard let projectURL else { return }
+        var arguments = ["timeline", "trim", "--path", projectURL.path,
+                         "--clip", clip.id, "--track", clip.trackId]
+        if let sourceIn { arguments += ["--in", String(sourceIn)] }
+        if let sourceOut { arguments += ["--out", String(sourceOut)] }
+        if let timelineIn { arguments += ["--timeline-in", String(timelineIn)] }
+        runProjectCommand(arguments)
     }
 
     func undo() {
