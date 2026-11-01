@@ -1,9 +1,9 @@
 import SwiftUI
 
 enum BMColor {
-    static let rose = Color(red: 223 / 255, green: 60 / 255, blue: 95 / 255)
-    static let navy = Color(red: 34 / 255, green: 65 / 255, blue: 147 / 255)
-    static let blue = Color(red: 111 / 255, green: 155 / 255, blue: 209 / 255)
+    static let rose = Color(red: 223.0 / 255.0, green: 60.0 / 255.0, blue: 95.0 / 255.0)
+    static let navy = Color(red: 34.0 / 255.0, green: 65.0 / 255.0, blue: 147.0 / 255.0)
+    static let blue = Color(red: 111.0 / 255.0, green: 155.0 / 255.0, blue: 209.0 / 255.0)
     static let canvas = Color(red: 0.055, green: 0.063, blue: 0.082)
     static let panel = Color(red: 0.085, green: 0.096, blue: 0.122)
     static let elevated = Color(red: 0.115, green: 0.129, blue: 0.160)
