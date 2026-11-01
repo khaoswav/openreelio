@@ -1,35 +1,32 @@
 # BEYOND-MOTİON Native macOS
 
-This directory starts the macOS-only SwiftUI migration while preserving the existing Rust and Tauri application.
+The macOS-only SwiftUI frontend is being migrated in parallel with the existing Tauri application. The existing Rust core remains the editing source of truth.
 
-## Open in Xcode
+## Build and run
 
-1. Open Xcode.
-2. Choose **File → Open…** and select this `Package.swift`.
-3. Select the **BEYOND-MOTION** executable scheme.
-4. Choose **My Mac** and Run.
-
-Or build from Terminal:
+From the repository root:
 
 ```bash
-cd native-macos
-swift build
+chmod +x scripts/build-native-macos.sh
+./scripts/build-native-macos.sh
 ```
 
-## Current migration slice
+Then run the executable printed by the script. The script builds the existing `openreelio-cli` against `openreelio-core` and the SwiftUI application. The SwiftUI app locates the CLI beside its executable or through `BEYOND_MOTION_CLI`.
 
-- Native SwiftUI app entry point and macOS window.
-- Native workspace chooser with recent workspace paths.
-- Native editor shell with media browser, viewer, inspector and timeline layout.
-- Local media import and AVKit preview for supported video/audio files.
-- BEYOND-MOTİON brand palette and a material-based macOS visual system.
+You can also open `native-macos/Package.swift` in Xcode. For a working project/media bridge, build the Rust CLI first and set the `BEYOND_MOTION_CLI` environment variable in the scheme.
 
-## Important scope boundary
+## Implemented native slice
 
-This is the first native UI foundation, not a claim that the full editor has already been ported. The existing Tauri/React application and Rust code remain intact. Editing operations, project persistence, AI workflows, export, effects and timeline editing are not yet connected to this SwiftUI shell.
+- SwiftUI macOS app and native workspace flow.
+- Native project creation through the existing Rust CLI/core.
+- Project open and refresh through Rust.
+- Media import into the real project asset store.
+- Timeline tracks and clips read from the Rust project model.
+- Insert selected media onto the first video track using the real timeline command.
+- AVKit source preview and native editor layout.
 
-## Rust integration plan
+## Migration boundary
 
-The current Rust implementation remains the source of truth. The next migration step is to define a stable native boundary around the existing Rust core and progressively replace Tauri IPC calls with that boundary. Before wiring it, audit the existing Tauri command surface and the `crates/openreelio-cli` interfaces. Prefer a typed local bridge with explicit request/response models; do not duplicate media-processing or AI logic in Swift.
+This is an incremental port, not a claim of full feature parity. Effects, trim/move/split editing controls, AI workflows, rendering/export, preferences and remaining Tauri command coverage are still to be migrated. Do not remove the current Tauri/React app until those workflows are implemented and verified in SwiftUI.
 
-The old Tauri application remains available throughout the migration so existing workflows are not lost while each native screen reaches feature parity.
+The CLI is a headless frontend over `openreelio-core`; it avoids duplicating editing rules in Swift. The native bridge invokes it as a local process and exchanges JSON, keeping media processing and project mutation in Rust.
