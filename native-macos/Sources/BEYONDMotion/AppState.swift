@@ -210,8 +210,8 @@ final class AppState: ObservableObject {
         guard let projectURL else { return }
         var arguments = ["timeline", "trim", "--path", projectURL.path,
                          "--clip", clip.id, "--track", clip.trackId]
-        if let sourceIn { arguments += ["--in", String(sourceIn)] }
-        if let sourceOut { arguments += ["--out", String(sourceOut)] }
+        if let sourceIn { arguments += ["--source-in", String(sourceIn)] }
+        if let sourceOut { arguments += ["--source-out", String(sourceOut)] }
         if let timelineIn { arguments += ["--timeline-in", String(timelineIn)] }
         runProjectCommand(arguments)
     }
