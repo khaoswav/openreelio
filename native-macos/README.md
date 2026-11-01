@@ -26,7 +26,7 @@ The script builds `openreelio-cli` and the SwiftUI executable, then places the C
 - Rust-backed project open, media import and asset/track/clip inspection.
 - Native media browser, source preview, inspector and timeline shell.
 - Insert media, select clips, move clips, split, remove, trim, undo and redo.
-- Clip dragging snaps to the nearest nearby clip boundary.
+- Clip dragging snaps same-track clips edge-to-edge when a boundary is nearby.
 - Left and right trim handles call the Rust timeline trim command. Left-edge trims also update timeline-in so the retained media stays aligned.
 - The Rust CLI bridge is implemented in `RustCLIClient.swift` with typed response models.
 
