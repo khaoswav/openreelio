@@ -22,6 +22,8 @@ final class AppState: ObservableObject {
     @Published var clips: [CLIClip] = []
     @Published var activeSequenceID: String?
     @Published var selectedAssetID: String?
+    @Published var selectedClipID: String?
+    @Published var playheadSeconds: Double = 0
     @Published var player: AVPlayer?
     @Published var isWorkspacePickerPresented = false
     @Published var isMediaPickerPresented = false
@@ -33,6 +35,8 @@ final class AppState: ObservableObject {
     private var scopedMediaURLs: Set<URL> = []
 
     var selectedAsset: MediaAsset? { mediaAssets.first { $0.id == selectedAssetID } }
+    var selectedClip: CLIClip? { clips.first { $0.id == selectedClipID } }
+    var timelineDuration: Double { max(clips.map { $0.timelineInSec + $0.durationSec }.max() ?? 0, 30) }
     var videoTrack: CLITrack? { tracks.first { $0.kind.localizedCaseInsensitiveContains("video") } }
 
     var availableProjects: [URL] {
@@ -115,6 +119,7 @@ final class AppState: ObservableObject {
             activeSequenceID = trackList.sequenceId
             let clipList: CLIClipList = try await cli.runJSON(["timeline", "clips", "--path", projectURL.path])
             clips = clipList.clips
+            if let selectedClipID, !clips.contains(where: { $0.id == selectedClipID }) { self.selectedClipID = nil }
             if let selectedAssetID, !mediaAssets.contains(where: { $0.id == selectedAssetID }) {
                 self.selectedAssetID = nil
                 player?.pause()
@@ -156,6 +161,42 @@ final class AppState: ObservableObject {
             .map { $0.timelineInSec + $0.durationSec }.max() ?? 0
         runProjectCommand(["timeline", "insert", "--path", projectURL.path, "--asset", asset.id,
                            "--track", track.id, "--at", String(position)])
+    }
+
+
+    func selectClip(_ clip: CLIClip) {
+        selectedClipID = clip.id
+        playheadSeconds = clip.timelineInSec
+    }
+
+    func splitSelectedClip() {
+        guard let projectURL, let clip = selectedClip else {
+            errorMessage = "Select a clip before splitting."
+            return
+        }
+        guard playheadSeconds > clip.timelineInSec + 0.01,
+              playheadSeconds < clip.timelineInSec + clip.durationSec - 0.01 else {
+            errorMessage = "Move the playhead inside the selected clip to split it."
+            return
+        }
+        runProjectCommand(["timeline", "split", "--path", projectURL.path,
+                           "--clip", clip.id, "--track", clip.trackId, "--at", String(playheadSeconds)])
+    }
+
+    func removeSelectedClip() {
+        guard let projectURL, let clip = selectedClip else {
+            errorMessage = "Select a clip to remove."
+            return
+        }
+        selectedClipID = nil
+        runProjectCommand(["timeline", "remove", "--path", projectURL.path,
+                           "--clip", clip.id, "--track", clip.trackId])
+    }
+
+    func moveClip(_ clip: CLIClip, to seconds: Double) {
+        guard let projectURL else { return }
+        runProjectCommand(["timeline", "move", "--path", projectURL.path,
+                           "--clip", clip.id, "--track", clip.trackId, "--to", String(max(0, seconds))])
     }
 
     func undo() {
