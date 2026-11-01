@@ -139,6 +139,10 @@ pub enum TimelineAction {
         #[arg(long, name = "out")]
         source_out: Option<f64>,
 
+        /// New timeline in point (seconds), for ripple-style left-edge trim
+        #[arg(long = "timeline-in")]
+        timeline_in: Option<f64>,
+
         /// Sequence ID (defaults to active sequence)
         #[arg(long)]
         sequence: Option<String>,
@@ -518,11 +522,15 @@ pub fn execute(action: TimelineAction) -> anyhow::Result<()> {
             track,
             source_in,
             source_out,
+            timeline_in,
             sequence,
         } => {
             validate::non_empty(&clip, "clip")?;
             validate::non_empty(&track, "track")?;
             validate::trim_points_ordered(source_in, source_out)?;
+            if let Some(value) = timeline_in {
+                validate::time_non_negative(value, "timeline-in")?;
+            }
             let mut project = super::load_project(&path)?;
             let seq_id = super::resolve_sequence_id(&project, sequence)?;
             // Trimming past the end of the media is how a clip that renders as
