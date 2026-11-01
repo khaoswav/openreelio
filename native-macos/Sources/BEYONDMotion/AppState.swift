@@ -196,8 +196,8 @@ final class AppState: ObservableObject {
     func moveClip(_ clip: CLIClip, to seconds: Double) {
         guard let projectURL else { return }
         let proposed = max(0, seconds)
-        let snapTargets = clips.filter { $0.id != clip.id }.flatMap {
-            [$0.timelineInSec, $0.timelineInSec + $0.durationSec]
+        let snapTargets = clips.filter { $0.id != clip.id && $0.trackId == clip.trackId }.flatMap {
+            [$0.timelineInSec + $0.durationSec, $0.timelineInSec - clip.durationSec]
         }
         let nearest = snapTargets.min(by: { abs($0 - proposed) < abs($1 - proposed) })
         let snapped = nearest.flatMap { abs($0 - proposed) <= 0.14 ? $0 : nil } ?? proposed
