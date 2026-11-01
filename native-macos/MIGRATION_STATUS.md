@@ -22,6 +22,7 @@ Base: existing BEYOND-MOTİON Tauri + React + Rust application.
 - [x] Drag clips horizontally to move them through the Rust timeline command.
 - [x] Trim clip start/end handles through the Rust timeline trim command.
 - [x] Extend the CLI trim command with an undoable timeline-in adjustment for left-edge trims.
+- [x] Add a Rust CLI integration test for left-edge trim positioning.
 - [x] Snap moved clips to nearby clip boundaries.
 - [x] Native AVKit source preview and editor shell.
 - [x] Build script for the SwiftUI app plus the headless Rust CLI.
