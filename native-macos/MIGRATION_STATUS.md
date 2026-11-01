@@ -41,3 +41,4 @@ Base: existing BEYOND-MOTİON Tauri + React + Rust application.
 ## Migration rule
 
 Do not delete the React/Tauri implementation until each equivalent SwiftUI workflow is connected to the shared Rust core and verified. The SwiftUI frontend must not reimplement project mutation or media processing rules in Swift.
+
