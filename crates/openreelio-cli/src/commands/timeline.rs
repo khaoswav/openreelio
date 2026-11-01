@@ -546,7 +546,7 @@ pub fn execute(action: TimelineAction) -> anyhow::Result<()> {
             )
             .map_err(|error| anyhow::anyhow!("Trim failed: {}", error))?;
             let cmd = TrimClipCommand::new(
-                &seq_id, &track, &clip, source_in, source_out, None, // timeline_in
+                &seq_id, &track, &clip, source_in, source_out, timeline_in,
             );
             let mut edit = super::EditRecorder::begin(&project, &seq_id);
             let result = edit
